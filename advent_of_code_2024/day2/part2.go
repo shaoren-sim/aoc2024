@@ -38,6 +38,7 @@ func checkZerosWithTolerance(differences []int, tolerance int, toleranceLimit in
 				fmt.Println(differences, differences[i], "at index", i, "fails condition.")
 				differences = removeFromSliceByInd(differences, i)
 				fmt.Println("Post removal", differences)
+				i = -1
 				loopMax -= 1
 			} else {
 				return differences, tolerance, false
@@ -67,6 +68,7 @@ func checkMonotonicWithTolerace(differences []int, tolerance int, toleranceLimit
 					fmt.Println(differences, differences[i], "at index", i, "fails condition.")
 					tolerance += 1
 					differences = removeFromSliceByInd(differences, i)
+					i = -1
 					loopMax -= 1
 					fmt.Println("Post removal", differences)
 				} else {
@@ -80,6 +82,7 @@ func checkMonotonicWithTolerace(differences []int, tolerance int, toleranceLimit
 					fmt.Println(differences, differences[i], "at index", i, "fails condition.")
 					tolerance += 1
 					differences = removeFromSliceByInd(differences, i)
+					i = -1
 					loopMax -= 1
 					fmt.Println("Post removal", differences)
 				} else {
@@ -100,6 +103,7 @@ func checkInRangeWithTolerance(differences []int, tolerance int, minval int, max
 	}
 	loopMax := len(differences)
 	for i := 0; i < loopMax; i++ {
+		fmt.Println(i)
 		num := differences[i]
 		// Absolute value.
 		if num < 0 {
@@ -112,6 +116,7 @@ func checkInRangeWithTolerance(differences []int, tolerance int, minval int, max
 				fmt.Println(differences, differences[i], "at index", i, "fails condition.")
 				differences = removeFromSliceByInd(differences, i)
 				fmt.Println("Post removal", differences)
+				i = -1
 				loopMax -= 1
 			} else {
 				return differences, tolerance, false
@@ -123,6 +128,7 @@ func checkInRangeWithTolerance(differences []int, tolerance int, minval int, max
 				fmt.Println(differences, differences[i], "at index", i, "fails condition.")
 				differences = removeFromSliceByInd(differences, i)
 				fmt.Println("Post removal", differences)
+				i = -1
 				loopMax -= 1
 			} else {
 				return differences, tolerance, false
@@ -165,6 +171,13 @@ func MainPart2() {
 	const toleranceLimit int = 1
 	// testLine := []int{33, 37, 38, 37, 38, 41}
 	// differences := getDifferences(testLine)
+	//
+	// fmt.Println("Original", testLine)
+	// fmt.Println("Differences", differences)
+	// isSafeWithTolerance(differences, 1)
+	//
+	// testLine = []int{47, 45, 40, 39, 36}
+	// differences = getDifferences(testLine)
 	//
 	// fmt.Println("Original", testLine)
 	// fmt.Println("Differences", differences)
