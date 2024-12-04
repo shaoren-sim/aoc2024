@@ -18,6 +18,13 @@ func BuildDiagonalStrings(rows []string, cols []string) ([]string, []string) {
 	// To calculate the number of diagonals in 1 direction
 	rowLength := len(rows[0])
 	colLength := len(cols[0])
+
+	// Determine what number to subtract during construction.
+	toSubtract := rowLength
+	if rowLength > colLength {
+		toSubtract = colLength
+	}
+
 	numDiagonalsPerDirection := rowLength + colLength - 1
 	// Horizontal >= Vertical
 	upperDiagonalStringsBuilder := make([]strings.Builder, numDiagonalsPerDirection)
@@ -39,7 +46,7 @@ func BuildDiagonalStrings(rows []string, cols []string) ([]string, []string) {
 			upperDiagonalStringsBuilder[diagInd].WriteByte(row[colInd])
 
 			// Upper-right starting diagonals
-			diagInd = rowInd - colInd + colLength - 1
+			diagInd = rowInd - colInd + toSubtract - 1
 			lowerDiagonalStringsBuilder[diagInd].WriteByte(row[colInd])
 		}
 	}
@@ -163,7 +170,6 @@ MXMXAXMASX`
 	if CountOccurences(testLines, "XMAS") != 18 {
 		panic("Failed test case.")
 	}
-
 }
 
 func MainPart1() {
