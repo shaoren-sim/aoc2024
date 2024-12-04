@@ -22,115 +22,152 @@ func buildVerticalStrings(lines []string) []string {
 	}
 
 	// Build strings from the builder.
-	verticalStrings := make([]string, len(lines))
-	for i := 0; i < len(lines); i++ {
+	verticalStrings := make([]string, len(lines[0]))
+	for i := 0; i < len(lines[0]); i++ {
 		verticalStrings[i] = verticalStringsBuilder[i].String()
 	}
 
 	return verticalStrings
 }
 
-func findIndices(inputString string, substring string) []int {
-	count := strings.Count(inputString, substring)
-	if count == 0 {
-		return []int{}
-	}
-	inds := make([]int, count)
+// 3x3 Search heuristic
+func heuristic(searchSlice [][]string, xWordParts []string, revXWordParts []string) bool {
+	// Check if the characters match our search condition.
 
-	i := 0
-	n := -1
-	for {
-		n = strings.Index(inputString, substring)
-		if n == -1 {
-			break
+	// Upper-left to lower-right check
+	startRow := searchSlice[0]
+	if startRow[0] == xWordParts[0] {
+		// fmt.Println("Enter condition 0")
+		for partInd, char := range xWordParts {
+			subSlice := searchSlice[partInd]
+			if subSlice[partInd] != char {
+				return false
+			}
 		}
-		if i == 0 {
-			inds[i] = n
-		} else {
-			inds[i] = n + inds[i-1] + 1
+		// fmt.Println("Clear cond 0")
+	} else if startRow[0] == revXWordParts[0] {
+		// fmt.Println("Enter condition 1")
+		for partInd, char := range revXWordParts {
+			subSlice := searchSlice[partInd]
+			if subSlice[partInd] != char {
+				return false
+			}
 		}
-		inputString = inputString[n+1:]
-		i += 1
+		// fmt.Println("Clear cond 1")
+	} else {
+		// Return false if not a match.
+		// Technically redundant since the trigger for this function is a match.
+		return false
 	}
-	return inds
+
+	// Lower-left to upper-right check
+	startRow = searchSlice[len(searchSlice)-1]
+	if startRow[0] == xWordParts[0] {
+		// fmt.Println("Enter condition 3")
+		for partInd, char := range xWordParts {
+			subSlice := searchSlice[len(searchSlice)-1-partInd]
+			if subSlice[partInd] != char {
+				return false
+			}
+		}
+		// fmt.Println("Pass condition 3")
+	} else if startRow[0] == revXWordParts[0] {
+		// fmt.Println("Enter condition 4")
+		for partInd, char := range revXWordParts {
+			subSlice := searchSlice[len(searchSlice)-1-partInd]
+			if subSlice[partInd] != char {
+				return false
+			}
+		}
+		// fmt.Println("Pass condition 4")
+	} else {
+		// Return false if not a match.
+		return false
+	}
+	return true
 }
 
-func findIndicesForwardReverse(inputString string, substring string) []int {
-	revSubstring := ReverseWord(substring)
-	forwardInds := findIndices(inputString, substring)
-	reverseInds := findIndices(inputString, revSubstring)
-	return append(forwardInds, reverseInds...)
-}
-
-func SearchX(upperDiagonal []string, lowerDiagonal []string, xWord string) int {
-	// Ensure that diagonals are the same length
-	if len(upperDiagonal) != len(lowerDiagonal) {
-		panic("Mismatched diagonal arrays.")
-	}
-
+func SearchX(matrix [][]string, xWord string) int {
 	count := 0
 
-	for i := 0; i < len(upperDiagonal); i++ {
-		for j := i; j < len(lowerDiagonal); j++ {
-			upperDiagInds := findIndicesForwardReverse(upperDiagonal[i], xWord)
-			lowerDiagInds := findIndicesForwardReverse(lowerDiagonal[j], xWord)
+	revXWord := ReverseWord(xWord)
 
-			// If either of the diagonals has no matches (len=0), break.
-			if len(upperDiagInds) == 0 {
-				continue
-			}
-			if len(lowerDiagInds) == 0 {
-				continue
-			}
-			for _, upperDiagInd := range upperDiagInds {
-				for _, lowerDiagInd := range lowerDiagInds {
-					if upperDiagInd == lowerDiagInd {
-						fmt.Println(upperDiagonal[i], lowerDiagonal[j])
-						fmt.Println(upperDiagInds, lowerDiagInds)
-						count += 1
-					}
+	xWordParts := strings.Split(xWord, "")
+	revXWordParts := strings.Split(revXWord, "")
+
+	rows := len(matrix)
+	cols := len(matrix[0])
+
+	searchDistance := len(xWordParts)
+	// Find the occurences of the pattern.
+	for i := 0; i <= rows-searchDistance; i++ {
+		row := matrix[i]
+		for j := 0; j <= cols-searchDistance; j++ {
+			char := string(row[j])
+			// Character match
+			if char == xWordParts[0] || char == revXWordParts[0] {
+				// Make a copy here to not affect the underlying slice.
+				searchSlice := append(matrix[:0:0], matrix[i:i+searchDistance]...)
+				for x := range searchSlice {
+					subSlice := searchSlice[x]
+					searchSlice[x] = subSlice[j : j+searchDistance]
+				}
+
+				// Perform heuristic test.
+				if heuristic(searchSlice, xWordParts, revXWordParts) {
+					count += 1
 				}
 			}
-
 		}
-
-		// // For the lower diagonal, count both forward and backwards occurences.
-		// lowerDiagInds := findIndices(lowerDiagonal[i], xWord)
-		// lowerDiagRevInds := findIndices(lowerDiagonal[i], revXWord)
-		// if lowerDiagRevCount > lowerDiagCount {
-		// 	lowerDiagCount = lowerDiagRevCount
-		// }
-		//
-		// if SearchForWord(upperDiagonal[i], xWord) == 1 || SearchForWord(upperDiagonal[i], revXWord) == 1 {
-		// 	if SearchForWord(lowerDiagonal[i], xWord) == 1 || SearchForWord(lowerDiagonal[i], revXWord) == 1 {
-		// 		fmt.Println("Match found")
-		// 		count += 1
-		// 	}
-		// }
 	}
 
 	return count
 }
 
-func CountXOccurences(lines []string, xWord string) int {
-	verticalStrings := buildVerticalStrings(lines)
-	upperDiagonal, lowerDiagonal := BuildDiagonalStrings(verticalStrings, lines)
-	// fmt.Println(upperDiagonal)
-	// fmt.Println(lowerDiagonal)
+func linesToMatrix(lines []string) [][]string {
+	rows := len(lines)
+	cols := len(lines[0])
+	matrix := make([][]string, rows)
 
-	count := SearchX(upperDiagonal, lowerDiagonal, xWord)
-	fmt.Println("Final count", count)
+	for i := 0; i < rows; i++ {
+		matrix[i] = make([]string, cols)
+		stringParts := strings.Split(lines[i], "")
+		for j := 0; j < cols; j++ {
+			matrix[i][j] = stringParts[j]
+		}
+	}
+
+	return matrix
+}
+
+func CountXOccurences(lines []string, xWord string) int {
+	matrix := linesToMatrix(lines)
+	count := SearchX(matrix, xWord)
+	// fmt.Println("Final count", count)
 
 	return count
 }
 
 func testXWordSearch() {
+	testString := `00000
+11111
+22222
+33333
+44444`
+	testLines, err := StringToLines(testString)
+	if err != nil {
+		panic("Error parsing test string")
+	}
+	if CountXOccurences(testLines, "123") != 3 {
+		panic("Failed test case.")
+	}
+
 	testDiagString := `XMAS
 XMAS
 XMAS
 XMAS`
 
-	testLines, err := StringToLines(testDiagString)
+	testLines, err = StringToLines(testDiagString)
 	if err != nil {
 		panic("Error parsing test string")
 	}
@@ -138,7 +175,57 @@ XMAS`
 		panic("Failed test case.")
 	}
 
-	testString := `MMMSXXMASM
+	testString = `0000000000
+1111111111
+2222222222
+3333333333
+4444444444
+5555555555`
+	testLines, err = StringToLines(testString)
+	if err != nil {
+		panic("Error parsing test string")
+	}
+	if CountXOccurences(testLines, "MAS") != 0 {
+		panic("Failed test case.")
+	}
+
+	testString = `0M0S000000
+11A11MSMS1
+2M2S2MAA22
+33A3ASMSM3
+4M4S4M4444
+5555555555
+S6S6S6S6S6
+7A7A7A7A77
+M8M8M8M8M8
+9999999999`
+	testLines, err = StringToLines(testString)
+	if err != nil {
+		panic("Error parsing test string")
+	}
+	if CountXOccurences(testLines, "MAS") != 9 {
+		panic("Failed test case.")
+	}
+
+	testString = `.M.S......
+..A..MSMS.
+.M.S.MAA..
+..A.ASMSM.
+.M.S.M....
+..........
+S.S.S.S.S.
+.A.A.A.A..
+M.M.M.M.M.
+..........`
+	testLines, err = StringToLines(testString)
+	if err != nil {
+		panic("Error parsing test string")
+	}
+	if CountXOccurences(testLines, "MAS") != 9 {
+		panic("Failed test case.")
+	}
+
+	testString = `MMMSXXMASM
 MSAMXMSMSA
 AMXSXMAAMM
 MSAMASMSMX
@@ -155,46 +242,12 @@ MXMXAXMASX`
 	if CountXOccurences(testLines, "MAS") != 9 {
 		panic("Failed test case.")
 	}
-
-}
-
-func testFindIndices() {
-	testString := "SMASAMSAM"
-	indices := findIndicesForwardReverse(testString, "MAS")
-
-	truth := []int{1, 3, 6}
-
-	if len(truth) != len(indices) {
-		panic("Failed testFindIndices, incorrect number of hits.")
-	}
-	for i := 0; i < len(truth); i++ {
-		if truth[i] != indices[i] {
-			panic("Failed testFindIndices, incorrect index.")
-		}
-	}
-
-	testString = "SMASAMSAMSMASAMSAM"
-	indices = findIndicesForwardReverse(testString, "MAS")
-
-	// Since we just blind join, order is upper-then-lower
-	truth = []int{1, 10, 3, 6, 12, 15}
-
-	if len(truth) != len(indices) {
-		panic("Failed testFindIndices, incorrect number of hits.")
-	}
-	for i := 0; i < len(truth); i++ {
-		if truth[i] != indices[i] {
-			panic("Failed testFindIndices, incorrect index.")
-		}
-	}
 }
 
 func MainPart2() {
-	testFindIndices()
 	testXWordSearch()
 
-	// parsedLines := GetInputLines()
-	// fmt.Println(len(parsedLines), "lines from input.")
-	// answer := CountXOccurences(parsedLines, "MAS")
-	fmt.Printf("Answer Part 2: %d\n", 0)
+	parsedLines := GetInputLines()
+	answer := CountXOccurences(parsedLines, "MAS")
+	fmt.Printf("Answer Part 2: %d\n", answer)
 }
