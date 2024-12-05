@@ -5,7 +5,7 @@ import (
 	"slices"
 )
 
-func GetElementDepthMap(s []int, ruleTree map[int][]int) map[int]int {
+func GetElementDepthMap(s []int, ruleMap map[int][]int) map[int]int {
 	depthMap := make(map[int]int)
 
 	for _, el := range s {
@@ -15,7 +15,7 @@ func GetElementDepthMap(s []int, ruleTree map[int][]int) map[int]int {
 	for _, startEl := range s {
 		currentEl := startEl
 		for _, el := range s[:] {
-			if !slices.Contains(ruleTree[currentEl], el) {
+			if !slices.Contains(ruleMap[currentEl], el) {
 				// fmt.Println("Element", el, "does not belongs after element", currentEl, ".")
 			} else {
 				// fmt.Println("Element", el, "belongs after element", currentEl, ". Adding to depth.")
@@ -41,14 +41,14 @@ func hasDupeValues(m map[int]int) bool {
 	return false
 }
 
-func RearrangeByRules(s []int, ruleTree map[int][]int) []int {
+func RearrangeByRules(s []int, ruleMap map[int][]int) []int {
 	rearrangedSlice := make([]int, len(s))
 
 	// For each value, identify it's position.
-	depthMap := GetElementDepthMap(s, ruleTree)
+	depthMap := GetElementDepthMap(s, ruleMap)
 	// fmt.Println(depthMap)
 
-	// Test to verify that all values in the map are unique.
+	// Create the rearranged slice by depth
 	for num, depth := range depthMap {
 		rearrangedSlice[depth] = num
 	}
@@ -74,9 +74,9 @@ func testDepthOrdering() {
 
 	// Parse the rules into [2]int arrays
 	rules := ParseRules(conditions, ruleSplitter)
-	// Convert the rules into a "tree" for easier execution.
-	forwardRuleTree := RulesToTree(rules, false)
-	reverseRuleTree := RulesToTree(rules, true)
+	// Convert the rules into an adjacency map for easier execution.
+	forwardRuleMap := RulesToMap(rules, false)
+	reverseRuleMap := RulesToMap(rules, true)
 
 	// sum := 0
 	errorInd := 0
@@ -86,12 +86,12 @@ func testDepthOrdering() {
 		slices.Reverse(reverseResultParts)
 
 		// For part 2, skip anything that passes both rules.
-		if ResultIsValid(resultParts, forwardRuleTree) && ResultIsValid(reverseResultParts, reverseRuleTree) {
+		if ResultIsValid(resultParts, forwardRuleMap) && ResultIsValid(reverseResultParts, reverseRuleMap) {
 			// fmt.Println(resultParts, "passes all tests.")
 			continue
 		}
 
-		rearrangedParts := RearrangeByRules(resultParts, forwardRuleTree)
+		rearrangedParts := RearrangeByRules(resultParts, forwardRuleMap)
 		for i, part := range rearrangedParts {
 			if part != truths[errorInd][i] {
 				fmt.Println("Failed test for input", resultParts)
@@ -117,8 +117,8 @@ func MainPart2() {
 	// Parse the rules into [2]int arrays
 	rules := ParseRules(conditions, ruleSplitter)
 	// Convert the rules into a "tree" for easier execution.
-	forwardRuleTree := RulesToTree(rules, false)
-	reverseRuleTree := RulesToTree(rules, true)
+	forwardRuleTree := RulesToMap(rules, false)
+	reverseRuleTree := RulesToMap(rules, true)
 
 	sum := 0
 

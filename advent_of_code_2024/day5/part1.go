@@ -50,8 +50,8 @@ func ParseResult(result string, resultSplitter string) []int {
 	return parsedResult
 }
 
-func RulesToTree(rules [][]int, reverse bool) map[int][]int {
-	tree := make(map[int][]int)
+func RulesToMap(rules [][]int, reverse bool) map[int][]int {
+	adjacencyMap := make(map[int][]int)
 
 	for _, rule := range rules {
 		// Reverse if requested
@@ -60,25 +60,25 @@ func RulesToTree(rules [][]int, reverse bool) map[int][]int {
 		}
 		root := rule[0]
 
-		// if the root node already does not exist in the tree.
+		// if the root node already does not exist in the adjacencyList.
 		// Create the []int slice
-		if _, ok := tree[root]; !ok {
-			tree[root] = make([]int, 0)
+		if _, ok := adjacencyMap[root]; !ok {
+			adjacencyMap[root] = make([]int, 0)
 		}
 		for j := 1; j < len(rule); j++ {
-			tree[root] = append(tree[root], rule[j])
+			adjacencyMap[root] = append(adjacencyMap[root], rule[j])
 		}
 	}
 
-	return tree
+	return adjacencyMap
 }
 
-func ResultIsValid(resultParts []int, ruleTree map[int][]int) bool {
+func ResultIsValid(resultParts []int, ruleMap map[int][]int) bool {
 	// Checking forward rules.
 	for i, page := range resultParts[:len(resultParts)-1] {
 		// fmt.Println("Checking page", page)
-		// If the part is in the rule tree, do comparisons.
-		if conditions, ok := ruleTree[page]; ok {
+		// If the part is in the rule adjacency list, do comparisons.
+		if conditions, ok := ruleMap[page]; ok {
 			// fmt.Println("Page", page, "is in rule tree.")
 			// fmt.Println("Conditions for page", page, ":", conditions)
 			// Loop through the remaining pages.
@@ -116,15 +116,15 @@ func MainPart1() {
 	// Parse the rules into [2]int arrays
 	rules := ParseRules(conditions, ruleSplitter)
 	// Convert the rules into a "tree" for easier execution.
-	forwardRuleTree := RulesToTree(rules, false)
-	reverseRuleTree := RulesToTree(rules, true)
+	forwardRuleMap := RulesToMap(rules, false)
+	reverseRuleMap := RulesToMap(rules, true)
 
 	sum := 0
 
 	for _, result := range results {
 		resultParts := ParseResult(result, resultSplitter)
 		// Forward check
-		if !ResultIsValid(resultParts, forwardRuleTree) {
+		if !ResultIsValid(resultParts, forwardRuleMap) {
 			// fmt.Println(result, "breaks the forward rules.")
 			continue
 		}
@@ -132,7 +132,7 @@ func MainPart1() {
 
 		// Reverse check
 		slices.Reverse(resultParts)
-		if !ResultIsValid(resultParts, reverseRuleTree) {
+		if !ResultIsValid(resultParts, reverseRuleMap) {
 			// fmt.Println(result, "breaks the reverse rules.")
 			continue
 		}
