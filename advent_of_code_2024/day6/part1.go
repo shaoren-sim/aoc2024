@@ -148,7 +148,6 @@ func CountTraversal(traversal [][]bool) int {
 }
 
 func GetTraversal(maze [][]int, starts [][3]int) [][]bool {
-
 	// NOTE: Probably a premature optimization
 	// But presumably there might be more than 1 start, so this handles that.
 	traversedMaps := make([][][]bool, len(starts))
@@ -166,7 +165,6 @@ func testSolve() {
 	const obstacleStr = "#"
 
 	input, err := getDownloadedFile("test.txt")
-
 	if err != nil {
 		panic(err)
 	}

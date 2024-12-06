@@ -41,59 +41,6 @@ func GetPath(maze [][]int, startState [3]int) [][3]int {
 	return pathStates
 }
 
-func NoObstaclesAhead(maze [][]int, startState [3]int) bool {
-	// Basic heuristic to get rid of easy cases.
-	// "Laser" ahead of the starting point to check for obstacles.
-	// If there are no obstacles, return true
-	rows := len(maze)
-	cols := len(maze[0])
-
-	x := startState[0]
-	y := startState[1]
-	direction := startState[2]
-
-	if direction == 0 {
-		// Moving up
-		for y > 0 {
-			y = y - 1
-			row := maze[y]
-			if row[x] == 1 {
-				return false
-			}
-		}
-	} else if direction == 1 {
-		// Moving right
-		row := maze[y]
-		for x < cols-1 {
-			x = x + 1
-			if row[x] == 1 {
-				return false
-			}
-		}
-	} else if direction == 2 {
-		// Moving down
-		for y < rows-1 {
-			y = y + 1
-			row := maze[y]
-			if row[x] == 1 {
-				return false
-			}
-		}
-	} else if direction == 3 {
-		// Moving left
-		row := maze[y]
-		for x > 0 {
-			x = x - 1
-			if row[x] == 1 {
-				return false
-			}
-		}
-	} else {
-		panic("Direction is invalid")
-	}
-	return true
-}
-
 func MazeStep(maze [][]int, state [3]int) ([3]int, bool) {
 	rows := len(maze)
 	cols := len(maze[0])
@@ -159,9 +106,19 @@ func StateInList(currentState [3]int, fullStatesList [][3]int) bool {
 	return false
 }
 
+func locInSlice(loc [2]int, s [][2]int) bool {
+	for _, el := range s {
+		if loc == el {
+			return true
+		}
+	}
+	return false
+}
+
 func ExhaustiveObstructionSearch(
 	maze [][]int,
 	pathStates [][3]int,
+	originalStartState [3]int,
 ) [][2]int {
 	rows := len(maze)
 	cols := len(maze[0])
@@ -172,7 +129,7 @@ func ExhaustiveObstructionSearch(
 
 	// Heuristic 1: We only obstruct the path (1 obstruction limit)
 	for i, startState := range pathStates[:len(pathStates)-1] {
-		fmt.Println("State", i+1, "of", len(pathStates)-1)
+		// fmt.Println("State", i+1, "of", len(pathStates)-1)
 		// Set this as the start point.
 		// This skips the steps to get to this point
 		x := startState[0]
@@ -183,6 +140,24 @@ func ExhaustiveObstructionSearch(
 		obstacleLoc := pathStates[i+1]
 		obstacleX := obstacleLoc[0]
 		obstacleY := obstacleLoc[1]
+
+		// Check to see if there is already an existing obstacle there.
+		mazeRow := maze[obstacleY]
+		if mazeRow[obstacleX] == 1 {
+			// fmt.Println("Pre-existing obstacle is at", obstacleLoc[:2], ". Skipping.")
+			continue
+		}
+
+		// Per the instructions, the original location cannot be used.
+		if obstacleLoc == originalStartState {
+			// fmt.Println("Cannot place obstacle at original starting position")
+			continue
+		}
+		if locInSlice([2]int{obstacleX, obstacleY}, validObstructionLocs) {
+			// fmt.Println("Already in list. Skipping")
+			continue
+		}
+
 		// Make a copy of the maze to not affect the source.
 		obstacledMaze := make([][]int, rows)
 		for i, mazeRow := range maze {
@@ -203,18 +178,15 @@ func ExhaustiveObstructionSearch(
 			direction -= 4
 		}
 
-		// Heuristic 2: "Laser lookahead"
-		// If there are no obstacles, obstacle does not work.
-		if NoObstaclesAhead(maze, [3]int{x, y, direction}) {
-			// fmt.Println("Failed laser lookahead test")
-			continue
-		}
-
-		// Heuristic 3: If the same path is traversed twice, it is probably a loop.
+		// Heuristic 2: If the same path is traversed twice, it is probably a loop.
 		// Store the traversed map
 		traversedMap := make(map[[3]int]int)
 
 		// Exhaustive maze crawl.
+		// Start from the original originalStartState
+		x = originalStartState[0]
+		y = originalStartState[1]
+		direction = originalStartState[2]
 		for {
 			// Do one step in the maze
 			newState, mazeEnd := MazeStep(obstacledMaze, [3]int{x, y, direction})
@@ -236,7 +208,7 @@ func ExhaustiveObstructionSearch(
 			}
 			// traversedMap[newState] += 1
 			// fmt.Println(newState, "is in the pathStates list. Count=", traversedMap[newState])
-			if traversedMap[newState] == 2 {
+			if traversedMap[newState] == 20 {
 				validObstructionLocs = append(
 					validObstructionLocs,
 					[2]int{obstacleX, obstacleY},
@@ -295,8 +267,8 @@ func testObstructionSolve() {
 	start := starts[0]
 
 	pathStates := GetPath(maze, start)
-
-	validObstructionLocs := ExhaustiveObstructionSearch(maze, pathStates)
+	// panic("Break")
+	validObstructionLocs := ExhaustiveObstructionSearch(maze, pathStates, start)
 	truths := make([][2]int, 6)
 	truths[0] = [2]int{3, 6}
 	truths[1] = [2]int{6, 7}
@@ -312,7 +284,6 @@ func testObstructionSolve() {
 
 func MainPart2() {
 	testObstructionSolve()
-	// panic("Check")
 	// Constants for parsing.
 	const startStr = "^"
 	const obstacleStr = "#"
@@ -323,7 +294,6 @@ func MainPart2() {
 	start := starts[0] // Only 1 start
 
 	pathStates := GetPath(maze, start)
-	fmt.Println(len(pathStates))
-	validObstructionLocs := ExhaustiveObstructionSearch(maze, pathStates)
+	validObstructionLocs := ExhaustiveObstructionSearch(maze, pathStates, start)
 	fmt.Printf("Answer Part 2: %d\n", len(validObstructionLocs))
 }
