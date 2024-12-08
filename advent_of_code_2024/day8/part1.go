@@ -94,52 +94,7 @@ func FilterAntinodes(antinodes [][2]int, dimX int, dimY int) [][2]int {
 	return filteredAntinodes
 }
 
-func testSolve(filepath string, expected int) {
-	const blankChar string = "."
-
-	input, err := getDownloadedFile(filepath)
-	if err != nil {
-		panic(err)
-	}
-
-	// Here, lines are in the format of [][]string
-	lines, err := GetLines(input)
-	if err != nil {
-		panic("Problem parsing file")
-	}
-
-	// Track height and width
-	dimX := len(lines[0])
-	dimY := len(lines)
-
-	// Get the positions of each unique character.
-	positionsMap := ParsePositions(lines, blankChar)
-	// for k, v := range positionsMap {
-	// 	fmt.Println(k, v)
-	// }
-
-	possibleAntinodes := make([][2]int, 0)
-	for _, positions := range positionsMap {
-		possibleAntinodes = append(possibleAntinodes, GetPossibleAntinodes(positions)...)
-	}
-
-	// Filter out antinodes that break the rules.
-	antinodes := FilterAntinodes(possibleAntinodes, dimX, dimY)
-
-	if len(antinodes) != expected {
-		fmt.Println("Got", len(antinodes), ", expected", expected)
-		panic("Failed test")
-	}
-}
-
-func MainPart1() {
-	testSolve("testeasy.txt", 4)
-	testSolve("test.txt", 14)
-
-	const blankChar string = "."
-
-	lines := GetInputs()
-
+func SolveForAntinodes(lines []string, blankChar string) [][2]int {
 	// Track height and width
 	dimX := len(lines[0])
 	dimY := len(lines)
@@ -161,5 +116,39 @@ func MainPart1() {
 	// Filter out antinodes that break the rules.
 	antinodes := FilterAntinodes(possibleAntinodes, dimX, dimY)
 
+	return antinodes
+}
+
+func testSolve(filepath string, expected int) {
+	const blankChar string = "."
+
+	input, err := getDownloadedFile(filepath)
+	if err != nil {
+		panic(err)
+	}
+
+	// Here, lines are in the format of [][]string
+	lines, err := GetLines(input)
+	if err != nil {
+		panic("Problem parsing file")
+	}
+
+	antinodes := SolveForAntinodes(lines, blankChar)
+
+	if len(antinodes) != expected {
+		fmt.Println("Got", len(antinodes), ", expected", expected)
+		panic("Failed test")
+	}
+}
+
+func MainPart1() {
+	testSolve("testeasy.txt", 4)
+	testSolve("test.txt", 14)
+
+	const blankChar string = "."
+
+	lines := GetInputs()
+
+	antinodes := SolveForAntinodes(lines, blankChar)
 	fmt.Printf("Answer Part 1: %d\n", len(antinodes))
 }
