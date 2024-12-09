@@ -10,7 +10,7 @@ func GetFillsAndBlanks(input string) ([]int, []int) {
 	inputLength := len(input)
 	lengthMod := 0
 	if inputLength%2 != 0 {
-		lengthMod += 1
+		inputLength += 1
 	}
 
 	// Represent the input as 2 arrays
@@ -34,7 +34,9 @@ func DebugStringRepresentation(filled []int, blanks []int) string {
 	// Basic debugging function to check the representation.
 	// Likely should not be used for performance concerns.
 	if len(filled) > 10 {
-		panic("More than 10 fill values. Since printing only supports 0-9, cannot get string representation.")
+		panic(
+			"More than 10 fill values. Since printing only supports 0-9, cannot get string representation.",
+		)
 	}
 
 	var sb strings.Builder

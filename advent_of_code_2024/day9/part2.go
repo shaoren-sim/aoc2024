@@ -137,53 +137,96 @@ func _GetChecksumPart2(filled []int, blanks []int) int {
 	return sum
 }
 
-func GetChecksumPart2(filled []int, blanks []int) int {
-	// Calculate the checksum by summing index*value
-	// Includes the blank-filling logic.
-	// Store a count of the number of ids used
-	idsUsedLeft := 0
-	idsUsedRight := 0
+func FillInTheBlanks(filled []int, blanks []int) []int {
+	// Initialize the arranged array.
+	// Defaults to all 0s, which is what we want.
+	values := make([]int, GetIDCount(filled)+GetIDCount(blanks))
 
 	// Get a Map of the filledValues to pop from.
 	stackMap := GetStackMap(filled)
 	blankMap := GetStackMap(blanks)
 
-	// Track the sum
-	sum := 0
-	currentInd := 0
-	for i := 0; i < len(filled)+len(blanks); i++ {
-		if i%2 == 0 {
-			fmt.Println(i, "stack", stackMap)
-			// Even case: use the filled values.
-			values := filled[i/2]
-			for range values {
-				// Break the loop when all IDs have been depleted.
-				val, _ := stackMap.PopStackMapLeft()
-				sum += currentInd * val
-				currentInd += 1
-				idsUsedLeft += 1
+	// Initializing a store for the blanks.
+	blankStack := make([][]int, len(blanks))
+	// Also track whether this blank is fully filled.
+	blankFilledCount := make([]int, len(blanks))
+
+	for blankInd, blankSize := range blanks {
+		// Defaults to 0, which is what we want.
+		blankStack[blankInd] = make([]int, blankSize)
+	}
+
+	// Following instructions, fill blanks from right to left.
+	for fillInd := len(filled) - 1; fillInd >= 0; fillInd-- {
+		fillCount := filled[fillInd]
+
+		// Following instructions, fill blanks from left to right.
+		// But only to the left of the file.
+		for blankInd, blankSize := range blanks[:fillInd] {
+			// If the fill count is too large, skip this blank
+			if fillCount > blankSize {
+				continue
 			}
-		} else {
-			// Odd case: use the blanks, and pull the filled.
-			fmt.Println(i, "blank", blankMap)
-			elements := 0
-			blankSize := blanks[i/2]
-			for blankSize > elements {
-				fmt.Println(i, "stack", stackMap)
-				fmt.Println(i, "blank", blankMap)
-				valSlice, depleted := stackMap.PopStackMapRightWithSize(blankSize - elements)
-				if depleted {
-					break
-				}
-				for _, val := range valSlice {
-					sum += currentInd * val
-					currentInd += 1
-					idsUsedRight += 1
-					elements += 1
-					blankMap[i/2] -= 1
-				}
+			// Otherwise, fill in the blank.
+			blankSlice := blankStack[blankInd]
+			for range fillCount {
+				indToFill := blankFilledCount[blankInd]
+
+				blankSlice[indToFill] = fillInd
+				stackMap[fillInd] -= 1
+				blankMap[fillInd-1] += 1
+				// blankMap[blankInd] -= 1
+				blankFilledCount[blankInd] += 1
 			}
+
+			// Decrement the blank count here.
+			blanks[blankInd] -= fillCount
+			break
 		}
+	}
+
+	// For each blank, expand the slice to match the new blank sizes.
+	for blankInd, blankSize := range blankMap {
+		blankSlice := blankStack[blankInd]
+		for len(blankSlice) < blankSize {
+			blankSlice = append(blankSlice, 0)
+		}
+		blankStack[blankInd] = blankSlice
+	}
+
+	// Merge the maps into values.
+	currentInd := 0
+	for ind := range blanks {
+		// Fill values always first.
+		fillCount := stackMap[ind]
+		for range fillCount {
+			values[currentInd] = ind
+			currentInd += 1
+		}
+
+		// Next, fill the blanks.
+		blankSize := blankMap[ind]
+		if len(blankStack[ind]) != blankSize {
+			panic("Size mismatch between blankStack and blankSize")
+		}
+		for _, el := range blankStack[ind] {
+			values[currentInd] = el
+			currentInd += 1
+		}
+	}
+	// fmt.Println("Values =", values)
+
+	return values
+}
+
+func GetChecksumPart2(filled []int, blanks []int) int {
+	// Calculate the checksum by summing index*value
+	// Start by filling in the blanks.
+	rearranged := FillInTheBlanks(filled, blanks)
+
+	sum := 0
+	for i, val := range rearranged {
+		sum += val * i
 	}
 	return sum
 }
@@ -213,5 +256,5 @@ func MainPart2() {
 	filled, blanks := GetFillsAndBlanks(input[0])
 	checksum := GetChecksumPart2(filled, blanks)
 
-	fmt.Printf("Answer Part 1: %d\n", checksum)
+	fmt.Printf("Answer Part 2: %d\n", checksum)
 }
