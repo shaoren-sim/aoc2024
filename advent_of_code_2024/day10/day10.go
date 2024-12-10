@@ -2,5 +2,5 @@ package main
 
 func main() {
 	MainPart1()
-	MainPart2()
+	// MainPart2()
 }
