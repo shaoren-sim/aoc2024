@@ -1,3 +1,4 @@
+// A scrapped attempt at doing a map-based approach, much slower.
 package main
 
 import (
