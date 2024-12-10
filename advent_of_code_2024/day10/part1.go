@@ -254,7 +254,7 @@ func MainPart1() {
 	testSolve("testeasy.txt", 1)
 	testSolve("test.txt", 36)
 	lines := GetInputs()
-	fmt.Println(len(lines), "in input.")
+	fmt.Println(len(lines), "lines in input.")
 
 	// Cast the file into an array.
 	maze, starts := LinesToArr(lines, startNum)
