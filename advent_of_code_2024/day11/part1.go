@@ -55,6 +55,16 @@ func testSolve(input []int, blinks int, expected int) {
 	}
 }
 
+func PrepareInput() []int {
+	// Parse input.
+	lines := GetInputs()
+	fmt.Println(len(lines), "lines in input.")
+
+	// Convert input into numeric array.
+	input := InputToArr(lines[0])
+	return input
+}
+
 func MainPart1() {
 	testSolve([]int{0, 1, 10, 99, 999}, 1, 7)
 	testSolve([]int{125, 17}, 1, 3)
@@ -65,13 +75,7 @@ func MainPart1() {
 	testSolve([]int{125, 17}, 6, 22)
 	testSolve([]int{125, 17}, 25, 55312)
 
-	// Parse input.
-	lines := GetInputs()
-	fmt.Println(len(lines), "lines in input.")
-
-	// Convert input into numeric array.
-	input := InputToArr(lines[0])
-	fmt.Println(input)
+	input := PrepareInput()
 
 	for range 25 {
 		input = MutateInput(input)
