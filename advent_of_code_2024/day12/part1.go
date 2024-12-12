@@ -5,42 +5,13 @@ import (
 	"slices"
 )
 
-func InitBoolMatrix(yDim int, xDim int) [][]bool {
-	matrix := make([][]bool, yDim)
-	for y := range yDim {
-		line := make([]bool, xDim)
-		matrix[y] = line
-	}
-	return matrix
-}
-
-func PrepareInput(lines []string) (map[string][][2]int, map[string][][]bool) {
-	yDim := len(lines)
-	xDim := len(lines[0])
-
+func PrepareInput(lines []string) map[string][][2]int {
 	// Return value initialization
-	// // 1: The string array.
-	// array := make([][]string, yDim)
-	// 1. The positions of every unique character.
 	charPosMaps := make(map[string][][2]int)
-	// 2: The map of every unique character.
-	charMaps := make(map[string][][]bool)
 
 	for y, line := range lines {
 		for x, charRune := range line {
 			char := string(charRune)
-
-			// For each character, get a boolean map of the positions.
-			if charMap, exists := charMaps[char]; exists {
-				charMapLine := charMap[y]
-				charMapLine[x] = true
-			} else {
-				// If does not exist, init the matrix.
-				charMap := InitBoolMatrix(yDim, xDim)
-				charMapLine := charMap[y]
-				charMapLine[x] = true
-				charMaps[char] = charMap
-			}
 
 			// Also, store a list of positions for each character.
 			if charPosMap, exists := charPosMaps[char]; exists {
@@ -53,91 +24,7 @@ func PrepareInput(lines []string) (map[string][][2]int, map[string][][]bool) {
 			}
 		}
 	}
-	return charPosMaps, charMaps
-}
-
-func GetArea(charMap [][]bool) int {
-	// Flatten the 2D slice for easier looping.
-	flatten := slices.Concat(charMap...)
-
-	// Area is just the total number of true values.
-	area := 0
-
-	for _, el := range flatten {
-		if el == true {
-			area += 1
-		}
-	}
-
-	return area
-}
-
-func GetValAtCoord(charMap [][]bool, y int, x int) bool {
-	// Port from day10 path finding.
-	// Difference: Here we allow out-of-bounds values to count perimeters.
-	// Helper function to get a matrix value by coordinate.
-	// Mainly because I'm lazy to do a check for boundaries.
-	// Returns:
-	// int: The value at said coordinate, -1 if invalid.
-
-	// Get the upper bounds.
-	yDim := len(charMap)
-	xDim := len(charMap[0])
-
-	// If out-of-bounds, return 1 (i.e. assume False)
-	if y < 0 || y >= yDim || x < 0 || x >= xDim {
-		return false
-	}
-
-	row := charMap[y]
-
-	return row[x]
-}
-
-func CountAdjacentFalses(charMap [][]bool, y int, x int) int {
-	// Counts the number of adjacent false values.
-	adjacentFalses := 0
-
-	// Case 1: Up
-	val := GetValAtCoord(charMap, y-1, x)
-	if val == false {
-		adjacentFalses += 1
-	}
-	// Case 2: Down
-	val = GetValAtCoord(charMap, y+1, x)
-	if val == false {
-		adjacentFalses += 1
-	}
-	// Case 3: Left
-	val = GetValAtCoord(charMap, y, x-1)
-	if val == false {
-		adjacentFalses += 1
-	}
-	// Case 4: Right
-	val = GetValAtCoord(charMap, y, x+1)
-	if val == false {
-		adjacentFalses += 1
-	}
-	return adjacentFalses
-}
-
-func GetPerimeter(charMap [][]bool) int {
-	// Naive way of calculating the perimeter.
-	// Likely inefficient.
-	// Any side that neighbours another element adds 1 to perimeter.
-	// Using modified + sign search code from day10
-
-	perimeter := 0 // The count of Adjacent false values.
-	for y, line := range charMap {
-		for x, isChar := range line {
-			// Only consider true cases.
-			if isChar {
-				adjacentFalses := CountAdjacentFalses(charMap, y, x)
-				perimeter += adjacentFalses
-			}
-		}
-	}
-	return perimeter
+	return charPosMaps
 }
 
 func GetPerimeterFromPosition(positions [][2]int) int {
@@ -220,7 +107,7 @@ func GetConnectedComponents(positions [][2]int) [][][2]int {
 }
 
 func Solve(lines []string) int {
-	charPosMaps, _ := PrepareInput(lines)
+	charPosMaps := PrepareInput(lines)
 
 	// Store the price.
 	totalPrice := 0
@@ -233,6 +120,7 @@ func Solve(lines []string) int {
 		// For all positions, group into components.
 		components := GetConnectedComponents(charPositions)
 		for _, positions := range components {
+			// Area is just the number of filled spots.
 			area := len(positions)
 			perimeter := GetPerimeterFromPosition(positions)
 			price := area * perimeter

@@ -230,7 +230,7 @@ func CountSidesByPosition(positions [][2]int) int {
 }
 
 func SolvePart2(lines []string) int {
-	charPosMaps, _ := PrepareInput(lines)
+	charPosMaps := PrepareInput(lines)
 
 	// Store the price.
 	totalPrice := 0
