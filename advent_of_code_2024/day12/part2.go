@@ -102,9 +102,7 @@ func getTFilledDiagonals(diagonals []bool, direction int) int {
 }
 
 func CountCorners(positions [][2]int, position [2]int) int {
-	// This only considered the + shape
-	// Not sufficient to differentiate between inner or outer vertices.
-	// Record the adjacency of the position.
+	// This only considers the + shape and the diagonals.
 	// This stores the adjacency in the following:
 	// 0: up
 	// 1: down
@@ -156,11 +154,14 @@ func CountCorners(positions [][2]int, position [2]int) int {
 		return 2
 	} else if adjacencyCount == 4 {
 		// Rule 1, if surrounded, count the number of filled diagonals.
-		// .o.	| ...
-		// oXo	| oXo
-		// .o.	| .o.
+		// .o.
+		// oXo
+		// .o.
 		return 4 - CountInSlice(diagonals)
 	} else if adjacencyCount == 3 {
+		// ...
+		// oXo
+		// .o.
 		// Depends, a pure T-shape returns 2 corners.
 		// But a filled T-shape might have 1 or 0 corners.
 		// Also, we need to check this before the straight line case
@@ -235,7 +236,7 @@ func SolvePart2(lines []string) int {
 	// Store the price.
 	totalPrice := 0
 
-	// Calculate the area and perimeter.
+	// Calculate the area and side count.
 	for _, charPositions := range charPosMaps {
 		// fmt.Println("==============")
 		// fmt.Println(char)
