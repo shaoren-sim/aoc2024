@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 )
@@ -92,8 +91,11 @@ func ParseEquations(lines []string) ([]map[string][]int, [][]int) {
 	return buttonConditions, prizePositions
 }
 
-func Solve2x2Eqn(lhs [][]float64, rhs []float64) []float64 {
-	// answer := make([]float64, 2)
+func Solve2x2Eqn(lhs [][]int, rhs []int) ([]int, bool) {
+	// Primary School Algorithm.
+	// Initial implementation uses divides and floats, but that fails part2.
+	// Reimplement only using ints.
+	// Int validity is returned as a boolean: false if divide has remaineder.
 	if len(lhs) != 2 && len(lhs[0]) != 2 {
 		panic("Solve2x2Eqn only works for 2x2 left-hand-side inputs.")
 	}
@@ -101,55 +103,64 @@ func Solve2x2Eqn(lhs [][]float64, rhs []float64) []float64 {
 		panic("Solve2x2Eqn only works for 1x2 right-hand-side inputs (x, y).")
 	}
 
-	// Primary School Algorithm.
 	// Set the first value to be the same scale as the 2nd.
 	// Cloning to not affect the underlying equation.
 	eqnClone := append(lhs[:0:0], lhs...)
 	lineq1 := eqnClone[0]
 	lineq2 := eqnClone[1]
-	multBy := lineq2[0] / lineq1[0]
 
-	newLineQ1 := append(lineq1[:0:0], lineq1...)
-	for i, val := range newLineQ1 {
-		newLineQ1[i] = val * multBy
+	newLineq1 := append(lineq1[:0:0], lineq1...)
+	for i, val := range newLineq1 {
+		newLineq1[i] = val * lineq2[0]
 	}
+
+	newLineq2 := append(lineq2[:0:0], lineq2...)
+	for i, val := range newLineq2 {
+		newLineq2[i] = val * lineq1[0]
+	}
+
+	// Early break condition to test if the int is valid
+	newRhs1 := rhs[0]*lineq2[0] - rhs[1]*lineq1[0]
+	if newRhs1%(newLineq1[1]-newLineq2[1]) != 0 {
+		return nil, false
+	}
+
 	// Solve for value at index 1.
-	ans1 := (rhs[0]*multBy - rhs[1]) / (newLineQ1[1] - lineq2[1])
+	ans1 := (rhs[0]*lineq2[0] - rhs[1]*lineq1[0]) / (newLineq1[1] - newLineq2[1])
+
+	// Yet another early break condition, check if the index 0 value is a valid int.
+	newRhs2 := rhs[0] - lineq1[1]*ans1
+	if newRhs2%lineq1[0] != 0 {
+		return nil, false
+	}
+
 	// Solve for value at index 0.
 	ans0 := (rhs[0] - lineq1[1]*ans1) / lineq1[0]
 
-	return []float64{ans0, ans1}
+	return []int{ans0, ans1}, true
 }
 
-func SolveEquation(buttonConditions map[string][]int, prizePosition []int, buttonOrder []string) map[string]float64 {
+func SolveEquation(buttonConditions map[string][]int, prizePosition []int, buttonOrder []string) map[string]int {
 	// Store the solved answer of number of presses.
-	buttonPresses := make(map[string]float64)
+	buttonPresses := make(map[string]int)
 
 	// Build the equation.
-	lhs := make([][]float64, len(buttonConditions))
+	lhs := make([][]int, len(buttonConditions))
 	for i := range len(buttonConditions) {
-		eqn := make([]float64, 0)
+		eqn := make([]int, 0)
 		for _, buttonName := range buttonOrder {
-			eqn = append(eqn, float64(buttonConditions[buttonName][i]))
+			eqn = append(eqn, buttonConditions[buttonName][i])
 		}
-		// for _, conditions := range buttonConditions {
-		// 	eqn = append(eqn, conditions[i])
-		// }
 		lhs[i] = eqn
 	}
 
-	// Cast prizePosition to float as well.
-	prizePositionFloat := make([]float64, len(prizePosition))
-	for i, pos := range prizePosition {
-		prizePositionFloat[i] = float64(pos)
-	}
-
 	// Solve the equation.
-	fmt.Println(lhs)
-	fmt.Println(buttonOrder)
-	fmt.Println(prizePosition)
-	ans := Solve2x2Eqn(lhs, prizePositionFloat)
-	fmt.Println(ans)
+	ans, isValidInt := Solve2x2Eqn(lhs, prizePosition)
+
+	// Early return if solving gets an invalid int.
+	if !isValidInt {
+		return nil
+	}
 
 	// Fill up the output dict.
 	for i, buttonName := range buttonOrder {
@@ -158,36 +169,25 @@ func SolveEquation(buttonConditions map[string][]int, prizePosition []int, butto
 	return buttonPresses
 }
 
-func belowMaxThreshold(buttonPresses map[string]float64, threshold float64) bool {
+func belowMaxThreshold(buttonPresses map[string]int, threshold int) bool {
 	for _, presses := range buttonPresses {
 		if presses > threshold {
-			fmt.Println("Button presses exceed threshold.")
+			// fmt.Println("Button presses exceed threshold.")
 			return false
 		}
 	}
 	return true
 }
 
-func closeToInt(buttonPresses map[string]float64, threshold float64) bool {
-	for _, presses := range buttonPresses {
-		roundInt := math.Round(presses)
-		if math.Abs(presses-roundInt) > threshold {
-			fmt.Println("Likely not an integer.")
-			return false
-		}
-	}
-	return true
-}
-
-func CountTokens(buttonPresses map[string]float64, tokenCosts map[string]int) int {
+func CountTokens(buttonPresses map[string]int, tokenCosts map[string]int) int {
 	tokens := 0
 	for buttonName, presses := range buttonPresses {
-		tokens += int(math.Round(presses)) * tokenCosts[buttonName]
+		tokens += presses * tokenCosts[buttonName]
 	}
 	return tokens
 }
 
-func Solve(lines []string, maxButtonPresses float64, intCheckThreshold float64, tokenCosts map[string]int) int {
+func Solve(lines []string, maxButtonPresses int, tokenCosts map[string]int) int {
 	buttonConditions, prizePositions := ParseEquations(lines)
 
 	// In Go, maps do not have guaranteed order,
@@ -204,14 +204,15 @@ func Solve(lines []string, maxButtonPresses float64, intCheckThreshold float64, 
 	for i, condition := range buttonConditions {
 		prizePosition := prizePositions[i]
 		buttonPresses := SolveEquation(condition, prizePosition, buttonOrder)
-		fmt.Println("presses for buttons", buttonOrder, buttonPresses)
+
+		// Early break condition if solving obtained invalid int.
+		if buttonPresses == nil {
+			continue
+		}
+
 		// Filter to see if the button presses are valid.
 		// Condition 1: no button presses beyond 100.
 		if !belowMaxThreshold(buttonPresses, maxButtonPresses) {
-			continue
-		}
-		// Condition 2: No such thing as floating point integer presses.
-		if !closeToInt(buttonPresses, intCheckThreshold) {
 			continue
 		}
 
@@ -223,8 +224,7 @@ func Solve(lines []string, maxButtonPresses float64, intCheckThreshold float64, 
 }
 
 func testSolve(inputFile string, expected int) {
-	const maxButtonPresses float64 = 100
-	const intCheckThreshold float64 = 0.00001
+	const maxButtonPresses int = 100
 	tokenCosts := map[string]int{"A": 3, "B": 1}
 
 	// Parse the input file into a 2D array.
@@ -237,7 +237,8 @@ func testSolve(inputFile string, expected int) {
 		panic(fmt.Errorf("Error parsing file %s.", inputFile))
 	}
 
-	tokens := Solve(lines, maxButtonPresses, intCheckThreshold, tokenCosts)
+	tokens := Solve(lines, maxButtonPresses, tokenCosts)
+	fmt.Println(tokens)
 
 	if tokens != expected {
 		panic(fmt.Errorf("Expected %d, got %d", expected, tokens))
@@ -245,13 +246,12 @@ func testSolve(inputFile string, expected int) {
 }
 
 func MainPart1() {
-	const maxButtonPresses float64 = 100
-	const intCheckThreshold float64 = 0.00001
+	const maxButtonPresses int = 100
 	tokenCosts := map[string]int{"A": 3, "B": 1}
 
 	testSolve("test.txt", 480)
 	lines := GetInputs()
-	tokens := Solve(lines, maxButtonPresses, intCheckThreshold, tokenCosts)
+	tokens := Solve(lines, maxButtonPresses, tokenCosts)
 
 	fmt.Printf("Answer Part 1: %d\n", tokens)
 }
