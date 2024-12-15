@@ -122,8 +122,9 @@ func (positionMap PositionMapP2) checkCanMove(
 		// fmt.Println("Making recursive call for", nextBoxCoordsLeft, direction)
 		// Here, perform a lookahead to see if all boxes can be moved.
 
-		canMove := positionMap.checkCanMove(nextBoxCoordsLeft, direction)
-		return canMove
+		canMoveL := positionMap.checkCanMove(nextBoxCoordsLeft, direction)
+		canMoveR := positionMap.checkCanMove(nextBoxCoordsRight, direction)
+		return canMoveL && canMoveR
 	}
 }
 
@@ -419,11 +420,11 @@ func testSolvePart2(inputFile string, expected int) {
 	xMax += 1
 	yMax += 1
 
-	positionMap.drawState(xMax, yMax)
+	// positionMap.drawState(xMax, yMax)
 
 	for _, direction := range path {
 		moveRobotP2(positionMap, direction)
-		positionMap.drawState(xMax, yMax)
+		// positionMap.drawState(xMax, yMax)
 	}
 
 	score := positionMap.CalculateScore()
@@ -436,28 +437,32 @@ func testSolvePart2(inputFile string, expected int) {
 func MainPart2() {
 	// testParse("testsmall2.txt")
 	// testParse("testlarge.txt")
+	testSolvePart2("testsmall2.txt", 618)
 	testSolvePart2("testlarge.txt", 9021)
+	// testSolvePart2("testbed.txt", 0)
+	// panic("BReak")
 	lines := GetInputs()
 
 	positionMap, path := PrepareInputsP2(lines)
+	// fmt.Println(path)
 
 	// Debug drawing of state.
-	yMax := 0
-	xMax := 0
-	for _, pos := range positionMap["#"] {
-		y := pos[0]
-		x := pos[1]
-		if x > xMax {
-			xMax = x
-		}
-		if y > yMax {
-			yMax = y
-		}
-	}
-	xMax += 1
-	yMax += 1
+	// yMax := 0
+	// xMax := 0
+	// for _, pos := range positionMap["#"] {
+	// 	y := pos[0]
+	// 	x := pos[1]
+	// 	if x > xMax {
+	// 		xMax = x
+	// 	}
+	// 	if y > yMax {
+	// 		yMax = y
+	// 	}
+	// }
+	// xMax += 1
+	// yMax += 1
 
-	positionMap.drawState(xMax, yMax)
+	// positionMap.drawState(xMax, yMax)
 	for _, direction := range path {
 		moveRobotP2(positionMap, direction)
 	}
