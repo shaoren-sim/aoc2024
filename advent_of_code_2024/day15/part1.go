@@ -148,7 +148,7 @@ func PrepareInputs(lines []string) (PositionMap, []int) {
 	// Next, parse the movements.
 	movementPath := make([]int, 0)
 	for _, line := range lines[startFrom:] {
-		fmt.Println(line)
+		// fmt.Println(line)
 		// Check to ensure that the line has characters.
 		if len(line) == 0 {
 			// Nothing to parse.
@@ -156,7 +156,6 @@ func PrepareInputs(lines []string) (PositionMap, []int) {
 		}
 		for _, charRune := range line {
 			char := string(charRune)
-			fmt.Println(charRune, movementMap[char])
 			movementPath = append(movementPath, movementMap[char])
 		}
 	}
@@ -250,12 +249,14 @@ func testSolve(inputFile string, expected int) {
 		y := pos[0]
 		x := pos[1]
 		if x > xMax {
-			xMax = x + 1
+			xMax = x
 		}
 		if y > yMax {
-			yMax = y + 1
+			yMax = y
 		}
 	}
+	xMax += 1
+	yMax += 1
 
 	// positionMap.drawState(xMax, yMax)
 
