@@ -115,108 +115,125 @@ func deepCopyDirections(s []int) []int {
 	return append(s[:0:0], s...)
 }
 
+func crawl(
+	maze [][]bool,
+	costCache map[[2]int]int,
+	end [2]int,
+	validPaths [][][2]int,
+	validDirectionLists [][]int,
+	currentPath [][2]int,
+	currentDirectionList []int,
+	position [2]int,
+	direction int,
+) ([][][2]int, [][]int) {
+	// fmt.Println(position, direction, len(currentPath), len(validPaths), "valid paths found")
+	// Break conditions:
+	// Condition 1: Reached a wall.
+	// if getValueAtPosition(maze, position) {
+	// 	fmt.Println("Wall hit")
+	// 	// Delete the path in memory.
+	// 	currentPath = make([][2]int, 0)
+	// 	currentDirectionList = make([]int, 0)
+	// 	return validPaths, validDirectionLists
+	// }
+
+	currentPath = append(currentPath, position)
+	currentDirectionList = append(currentDirectionList, direction)
+
+	// Condition 2: Reached the end.
+	if position == end {
+		// Since this is a valid path, append.
+		validPaths = append(validPaths, currentPath)
+		validDirectionLists = append(validDirectionLists, currentDirectionList)
+		// fmt.Println("Found path reaching end")
+		return validPaths, validDirectionLists
+	}
+
+	// Get the number of possible next paths.
+	possibleSteps, possibleDirections := getPossibleSteps(maze, currentPath, position)
+	if len(possibleSteps) != len(possibleDirections) {
+		panic("Number of possible steps does not match number of directions.")
+	}
+	if len(possibleSteps) > 1 {
+		// Branch reached.
+		currentCost := calculateScore(currentPath, currentDirectionList)
+		existingCost, exists := costCache[position]
+		if exists {
+			if currentCost > existingCost {
+				return validPaths, validDirectionLists
+			}
+		} else {
+			costCache[position] = currentCost
+		}
+	}
+	for i := range possibleSteps {
+		validPaths, validDirectionLists = crawl(
+			maze,
+			costCache,
+			end,
+			validPaths,
+			validDirectionLists,
+			deepCopyPaths(currentPath),
+			deepCopyDirections(currentDirectionList),
+			possibleSteps[i],
+			possibleDirections[i],
+		)
+		// validPaths, validDirectionLists = crawl(maze, end, validPaths, validDirectionLists, currentPath, currentDirectionList, possibleSteps[i], possibleDirections[i])
+	}
+	return validPaths, validDirectionLists
+}
+
 func GetValidPaths(maze [][]bool, start [2]int, end [2]int) ([][][2]int, [][]int) {
-	// Result variables to store valid paths and their direction lists.
-	var validPaths [][][2]int
-	var validDirectionLists [][]int
+	// Initialize the valid path store.
+	validPaths := make([][][2]int, 0)
+	validDirectionLists := make([][]int, 0)
 
-	// Queue to store paths and their associated data for BFS.
-	type PathData struct {
-		Path          [][2]int // The sequence of positions in the path
-		DirectionList []int    // The sequence of directions taken
-		Position      [2]int   // Current position in the path
-	}
+	// Initialize the starting state.
+	path := make([][2]int, 0)
+	directionList := make([]int, 0)
 
-	queue := []PathData{
-		{
-			Path:          [][2]int{start},
-			DirectionList: []int{1},
-			Position:      start,
-		},
-	}
+	// // Initialize the blank path storage.
+	// // Used to handle branching.
+	// pathStorage := make([][][2]int, 0)
+	// directionListStorage := make([][]int, 0)
+	// validPaths, validDirectionLists = crawl(maze, end, validPaths, validDirectionLists, pathStorage, directionListStorage, path, directionList, start, 1)
 
 	costCache := make(map[[2]int]int)
 
-	for len(queue) > 0 {
-		// Dequeue the first element
-		current := queue[0]
-		queue = queue[1:]
-
-		// Extend the current path
-		// current.Path = append(current.Path, current.Position)
-
-		// Check if we've reached the end
-		if current.Position == end {
-			existingCost, exists := costCache[end]
-			currentCost := calculateScore(current.Path, current.DirectionList)
-			if exists {
-				if existingCost > currentCost {
-					costCache[end] = currentCost
-				}
+	validPaths, validDirectionLists = crawl(
+		maze,
+		costCache,
+		end,
+		validPaths,
+		validDirectionLists,
+		path,
+		directionList,
+		start,
+		1,
+	)
+	fmt.Println(costCache)
+	for y, row := range maze {
+		for x, b := range row {
+			if b {
+				fmt.Printf("#")
 			} else {
-				costCache[end] = currentCost
+				_, exists := costCache[[2]int{y, x}]
+				if exists {
+					fmt.Printf("X")
+				} else {
+					if [2]int{y, x} == start {
+						fmt.Printf("S")
+					} else if [2]int{y, x} == end {
+						fmt.Printf("E")
+					} else {
+						fmt.Printf(".")
+					}
+				}
 			}
-			validPaths = append(validPaths, current.Path)
-			validDirectionLists = append(validDirectionLists, current.DirectionList)
-			continue
 		}
-
-		// Get possible steps and directions from the current position
-		possibleSteps, possibleDirections := getPossibleSteps(maze, current.Path, current.Position)
-		if len(possibleSteps) != len(possibleDirections) {
-			panic("Number of possible steps does not match number of directions.")
-		}
-
-		// Evaluate branching and costs
-		if len(possibleSteps) > 1 {
-			currentCost := calculateScore(current.Path, current.DirectionList)
-			existingCost, exists := costCache[current.Position]
-			if exists && currentCost > existingCost {
-				// fmt.Println("Pruning")
-				continue
-			}
-			// Update cost cache
-			costCache[current.Position] = currentCost
-		}
-
-		// Add possible steps to the queue
-		for i := range possibleSteps {
-			newPathData := PathData{
-				Path: append([][2]int{}, current.Path...), // Deep copy current path
-				DirectionList: append(
-					[]int{},
-					current.DirectionList...), // Deep copy direction list
-				Position: possibleSteps[i],
-			}
-			newPathData.DirectionList = append(newPathData.DirectionList, possibleDirections[i])
-			newPathData.Path = append(newPathData.Path, possibleSteps[i])
-			queue = append(queue, newPathData)
-		}
+		fmt.Printf("\n")
 	}
-	// fmt.Println(costCache)
-	// for y, row := range maze {
-	// 	for x, b := range row {
-	// 		if b {
-	// 			fmt.Printf("#")
-	// 		} else {
-	// 			_, exists := costCache[[2]int{y, x}]
-	// 			if exists {
-	// 				fmt.Printf("X")
-	// 			} else {
-	// 				if [2]int{y, x} == start {
-	// 					fmt.Printf("S")
-	// 				} else if [2]int{y, x} == end {
-	// 					fmt.Printf("E")
-	// 				} else {
-	// 					fmt.Printf(".")
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	fmt.Printf("\n")
-	// }
 
-	fmt.Println(costCache[end])
 	return validPaths, validDirectionLists
 }
 
@@ -255,7 +272,7 @@ func Solve(maze [][]bool, start [2]int, end [2]int) int {
 
 	// Calculate the lowest score.
 	score := calculateScore(validPaths[0], validDirections[0])
-	for i := range validPaths {
+	for i := range validPaths[1:] {
 		newScore := calculateScore(validPaths[i], validDirections[i])
 		if newScore < score {
 			score = newScore
@@ -289,7 +306,7 @@ func testSolve(inputFile string, expected int) {
 func MainPart1() {
 	testSolve("test.txt", 7036)
 	testSolve("test2.txt", 11048)
-	// panic("Check tests")
+	panic("Check tests")
 	lines := GetInputs()
 	fmt.Println(len(lines), "lines in input.")
 
