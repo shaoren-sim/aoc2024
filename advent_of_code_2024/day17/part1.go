@@ -18,7 +18,7 @@ func IntPow(a int, b int) int {
 
 	result := a
 	for i := 2; i <= b; i++ {
-		result *= b
+		result = result * a
 	}
 	return result
 }
@@ -107,7 +107,6 @@ func (program *Program) regDiv(operand int) int {
 func (program *Program) op0advA(operand int) {
 	operand = program.operandRules(operand)
 	program.A = program.regDiv(operand)
-
 	program.Pointer += 2
 }
 
@@ -117,7 +116,8 @@ func (program *Program) op1bxl(operand int) {
 	// b3bit := castTo3Bit(program.B)
 
 	// program.B = castFrom3Bit(xor3bit(b3bit, op3bit))
-	program.B = program.B ^ operand
+	currentVal := program.B
+	program.B = currentVal ^ operand
 	program.Pointer += 2
 }
 
@@ -142,7 +142,8 @@ func (program *Program) op4bxc(operand int) {
 	// c3bit := castTo3Bit(program.C)
 	//
 	// program.B = castFrom3Bit(xor3bit(b3bit, c3bit))
-	program.B = program.B ^ program.C
+	currentVal := program.B
+	program.B = currentVal ^ program.C
 	program.Pointer += 2
 }
 
@@ -321,10 +322,19 @@ func runBasicTests() {
 }
 
 func MainPart1() {
+	if IntPow(2, 2) != 4 {
+		panic("Failed 2^2")
+	}
+	if IntPow(2, 3) != 8 {
+		panic("Failed 2^3")
+	}
+	if IntPow(2, 4) != 16 {
+		panic("Failed 2^4")
+	}
 	runBasicTests()
 
 	testSolve("test.txt", "4,6,3,5,6,3,5,2,1,0")
-	panic("Check tests")
+	// panic("Check tests")
 	lines := GetInputs()
 	fmt.Println(len(lines), "in input.")
 
