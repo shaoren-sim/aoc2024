@@ -18,6 +18,7 @@ func SolvePart2(maze [][]bool, start [2]int, end [2]int) int {
 	bestScore := calculateScore(validPaths[0], validDirections[0])
 	for i := range validPaths {
 		newScore := calculateScore(validPaths[i], validDirections[i])
+		fmt.Println(len(validPaths[i]), newScore)
 		pathScoreMap[i] = newScore
 		if newScore < bestScore {
 			bestScore = newScore
@@ -83,7 +84,6 @@ func testSolvePart2(inputFile string, expected int) {
 }
 
 func MainPart2() {
-	testSolvePart2("testreddit.txt", 149)
 	testSolvePart2("test.txt", 45)
 	testSolvePart2("test2.txt", 64)
 	// panic("Check tests")
@@ -91,6 +91,6 @@ func MainPart2() {
 	fmt.Println(len(lines), "lines in input.")
 
 	maze, start, end := ParseMaze(lines)
-	score := Solve(maze, start, end)
-	fmt.Printf("Answer Part 1: %d\n", score)
+	score := SolvePart2(maze, start, end)
+	fmt.Printf("Answer Part 2: %d\n", score)
 }
