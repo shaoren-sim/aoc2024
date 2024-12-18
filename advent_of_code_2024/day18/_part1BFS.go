@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/heap"
 	"fmt"
 	"slices"
 	"strconv"
@@ -88,82 +87,78 @@ func getNextSteps(current PathData) []PathData {
 	return nextSteps
 }
 
-// PriorityQueue implements a priority queue for PathData.
-type PriorityQueue []PathData
+func getAllPaths(blockPositions [][2]int, start [2]int, end [2]int, xMax int, yMax int) []PathData {
+	// Find the shortest path.
+	// Uses BFS as per the code from day16.
 
-func (pq PriorityQueue) Len() int { return len(pq) }
+	// Store all the valid paths that reach the end.
+	validPaths := make([]PathData, 0)
 
-func (pq PriorityQueue) Less(i, j int) bool {
-	// We want Pop to give us the lowest cost, so we use Less based on Cost.
-	return pq[i].Cost < pq[j].Cost
-}
+	// Init path queue.
+	queue := []PathData{{Position: start, Path: [][2]int{}, Cost: 0}}
 
-func (pq PriorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-}
-
-func (pq *PriorityQueue) Push(x interface{}) {
-	item := x.(PathData)
-	*pq = append(*pq, item)
-}
-
-func (pq *PriorityQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	*pq = old[0 : n-1]
-	return item
-}
-
-func getShortestPath(blockPositions [][2]int, start [2]int, end [2]int, xMax int, yMax int) *PathData {
-	// Priority queue for exploration.
-	pq := &PriorityQueue{}
-	heap.Init(pq)
-
-	// Initialize with the start position.
-	heap.Push(pq, PathData{Position: start, Path: [][2]int{}, Cost: 0})
-
-	// Cost cache to avoid revisiting with higher cost.
+	// Pruning logic.
 	costCache := make(map[[2]int]int)
 
-	for pq.Len() > 0 {
-		// Pop the lowest-cost path.
-		current := heap.Pop(pq).(PathData)
+	for len(queue) > 0 {
+		// Pop from front of queue
+		current := queue[0]
+		queue = queue[1:]
+
+		// Extract existing values.
 		position := current.Position
 		currentCost := current.Cost
-		x, y := position[0], position[1]
+		x := position[0]
+		y := position[1]
 
-		// Skip if out of bounds.
+		// Break conditions.
+		// Condition 1: If out of bounds
 		if x < 0 || y < 0 || x > xMax || y > yMax {
+			// fmt.Println("Out of bounds", position)
 			continue
 		}
-
-		// Skip if it's a wall.
+		// Condition 2: If is wall
 		if slices.Contains(blockPositions, position) {
+			// fmt.Println("Is wall", position)
 			continue
 		}
-
-		// Check if we reached the end.
+		// Condition 3: If already traversed.
+		if slices.Contains(current.Path, position) {
+			// fmt.Println("Already traversed", position)
+			continue
+		}
+		// Condition 4: If at end.
 		if position == end {
-			return &current
-		}
-
-		// Skip if a better cost already exists in the cache.
-		if cachedCost, exists := costCache[position]; exists && cachedCost <= currentCost {
+			validPaths = append(validPaths, current)
+			// fmt.Println("Reached end", position)
 			continue
 		}
 
-		// Update the cost cache.
-		costCache[position] = currentCost
+		// Check the cost cache.
+		existingCost, exists := costCache[position]
+		if exists {
+			if existingCost < currentCost {
+				// fmt.Println("Previously have better cost", position)
+				continue
+			}
+		} else {
+			costCache[position] = currentCost
+		}
+		// Append next possible steps to the queue.
+		nextSteps := getNextSteps(current)
+		queue = append(queue, nextSteps...)
+	}
+	return validPaths
+}
 
-		// Explore next steps.
-		for _, nextStep := range getNextSteps(current) {
-			heap.Push(pq, nextStep)
+func getShortestPath(paths []PathData) [][2]int {
+	shortestPath := paths[0].Path
+	for _, pathObj := range paths {
+		if len(pathObj.Path) < len(shortestPath) {
+			shortestPath = pathObj.Path
 		}
 	}
-
-	// Return nil if no path is found.
-	return nil
+	return shortestPath
 }
 
 func testSolve(inputFile string, expected int) {
@@ -202,16 +197,17 @@ func testSolve(inputFile string, expected int) {
 
 func SolvePart1(allBlockPositions [][2]int, blockStart int, blockEnd int, start [2]int, end [2]int, xMax int, yMax int) int {
 	blockPositions := allBlockPositions[blockStart:blockEnd]
-	// printMaze(blockPositions, [][2]int{}, xMax, yMax)
-	pathObj := getShortestPath(blockPositions, start, end, xMax, yMax)
+	printMaze(blockPositions, [][2]int{}, xMax, yMax)
+	paths := getAllPaths(blockPositions, start, end, xMax, yMax)
 
-	return len(pathObj.Path)
+	shortestPath := getShortestPath(paths)
+	return len(shortestPath)
 }
 
 func MainPart1() {
 	testSolve("test.txt", 22)
 	lines := GetInputs()
-	// fmt.Println(len(lines), "in input.")
+	fmt.Println(len(lines), "in input.")
 
 	edgeLength := 70
 	var start [2]int = [2]int{0, 0}
